@@ -1,24 +1,25 @@
-import * as React from 'react';
-import styles from './styles.module.css';
+import * as React from 'react'; // Import React library
+import styles from './styles.module.css'; // Import CSS styles
+import { StepStates, ProgressStep, StepProgressProps, ReducerAction } from './models'; // Import types/interfaces from models file
 
-import { StepStates, ProgressStep, StepProgressProps, ReducerAction } from './models';
-
+// Define reducer function to manage state of steps
 function stepsReducer(steps: ProgressStep[], action: ReducerAction): ProgressStep[] {
-
+  // Use map() to create new array of steps with updated state
   return steps.map(function (step, i) {
-
-    if (i < action.payload.index) {
+    if (i < action.payload.index) { // If step is before current step, mark as completed
       step.state = StepStates.COMPLETED;
-    } else if (i === action.payload.index) {
+    } else if (i === action.payload.index) { // If step is current step, update its state
       step.state = action.payload.state;
-    } else {
+    } else { // If step is after current step, mark as not started
       step.state = StepStates.NOT_STARTED;
     }
-    return step;
+    return step; // Return updated step object
   });
 }
 
+// Define StepProgressBar component function
 function StepProgressBar(props: StepProgressProps): JSX.Element {
+  // Destructure props object
   const {
     steps,
     startingStep,
@@ -36,9 +37,12 @@ function StepProgressBar(props: StepProgressProps): JSX.Element {
     previousBtnName,
     nextBtnName
   } = props;
+
+  // Use useReducer hook to manage state of steps
   const [state, dispatch] = React.useReducer(stepsReducer, steps);
   const [currentIndex, setCurrentIndex] = React.useState(startingStep);
 
+  // Use useEffect hook to initialize state of starting step
   React.useEffect(function () {
     dispatch({
       type: 'init',
@@ -46,21 +50,24 @@ function StepProgressBar(props: StepProgressProps): JSX.Element {
     });
   }, []);
 
+  // Define function to handle submit button click
   function submitHandler(): void {
     onSubmit();
   }
 
+  // Define function to handle next button click
   function nextHandler(): void {
-
-    if (currentIndex === steps.length - 1) {
+    if (currentIndex === steps.length - 1) { // If on last step, do nothing
       return;
     }
+
     let isStateValid = true;
     const stepValidator = state[currentIndex].validator;
-
-    if (stepValidator) {
+    if (stepValidator) { // If step has validator function, check if step is valid
       isStateValid = stepValidator();
     }
+
+    // Dispatch action to update state of current step
     dispatch({
       type: 'next',
       payload: {
@@ -69,17 +76,18 @@ function StepProgressBar(props: StepProgressProps): JSX.Element {
       }
     });
 
-    if (isStateValid) {
+    if (isStateValid) { // If step is valid, update current index
       setCurrentIndex(currentIndex + 1);
     }
   }
 
+  // Define function to handle previous button click
   function prevHandler(): void {
-
-    if (currentIndex === 0) {
+    if (currentIndex === 0) { // If on first step, do nothing
       return;
     }
 
+    // Dispatch action to update state of current step
     dispatch({
       type: 'previous',
       payload: {
@@ -87,86 +95,13 @@ function StepProgressBar(props: StepProgressProps): JSX.Element {
         state: StepStates.CURRENT
       }
     });
+
+    // Update current index
     setCurrentIndex(currentIndex - 1);
   }
 
+  // Render progress bar and buttons
   return (
     <div className={`${styles['progress-bar-wrapper']} ${wrapperClass || ''}`}>
       <ul className={`${styles['step-progress-bar']} ${progressClass || ''}`}>
-        {state.map(function (step, i) {
-          return (
-            <li
-              key={i}
-              className={`${styles['progress-step']}${
-                step.state === StepStates.COMPLETED ? ` ${styles.completed}` : ''
-              }${step.state === StepStates.CURRENT ? ` ${styles.current}` : ''}${
-                step.state === StepStates.ERROR ? ` ${styles['has-error']}` : ''
-              } ${stepClass || ''}`}
-            >
-              {step.state === StepStates.COMPLETED && (
-                <span className={styles['step-icon']}>
-                  <svg
-                    width="1.5rem"
-                    viewBox="0 0 13 9"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M1 3.5L4.5 7.5L12 1" stroke="white" strokeWidth="1.5" />
-                  </svg>
-                </span>
-              )}
-              {step.state === StepStates.ERROR && <span className={styles['step-icon']}>!</span>}
-              {step.state !== StepStates.COMPLETED && step.state !== StepStates.ERROR && (
-                <span className={styles['step-index']}>{i + 1}</span>
-              )}
-              <div className={`${styles['step-label']} ${labelClass || ''}`}>
-                {step.label}
-                {step.subtitle && (
-                  <div className={`${styles['step-label-subtitle']} ${subtitleClass || ''}`}>
-                    {step.subtitle}
-                  </div>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      <div className={`${styles['step-content']} ${contentClass || ''}`}>
-        {props.steps[currentIndex].content}
-      </div>
-
-      <div className={`${styles['step-buttons']} ${buttonWrapperClass || ''}`}>
-        <a
-          className={`${styles['step-action-btn']} ${styles['action-btn-secondary']} ${
-            currentIndex === 0 ? styles.disabled : ''
-          } ${secondaryBtnClass || ''}`}
-          onClick={prevHandler}
-        >
-          {previousBtnName ? previousBtnName : 'Previous'}
-        </a>
-        {currentIndex === state.length - 1 ? (
-          <a
-            className={`${styles['step-action-btn']} ${styles['action-btn-primary']} ${
-              primaryBtnClass || ''
-            }`}
-            onClick={submitHandler}
-          >
-            {submitBtnName || 'Submit'}
-          </a>
-        ) : (
-          <a
-            className={`${styles['step-action-btn']} ${styles['action-btn-primary']} ${
-              primaryBtnClass || ''
-            }`}
-            onClick={nextHandler}
-          >
-            {nextBtnName ? nextBtnName : 'Next'}
-          </a>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default StepProgressBar;
+        {state
